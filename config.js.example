@@ -1,0 +1,20 @@
+const config = {
+  // defaults to Saitek Pro Flight Quadrant
+  vid: 1699,
+  pid: 3117,
+
+  nodered: {
+    username: "",
+    endpoint: "",
+    password: "",
+  },
+
+  levers: {
+    // left lever
+    videolights: 0,
+    // right lever
+    volume: 2,
+  },
+};
+
+module.exports = config;
