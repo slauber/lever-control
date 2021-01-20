@@ -14,7 +14,7 @@ const { exec } = require("child_process");
 
 usbDetect.startMonitoring();
 let previousVol = -100;
-let previousVideoLight;
+const previousAccessoryStatus = {};
 
 usbDetect.on(`add`, (device) => {
   if (device.vendorId === config.vid && device.productId === config.pid) {
@@ -58,9 +58,17 @@ const onControllerDetected = () => {
           if (pair[0] === config.levers.videolights) {
             const lightNormalized = (255 - pair[1]) / 2.55;
             if (lightNormalized > 80) {
-              setVideoLights("true");
+              setAccessory("videolights", "true");
             } else if (lightNormalized < 20) {
-              setVideoLights("false");
+              setAccessory("videolights", "false");
+            }
+          }
+          if (pair[0] === config.switches.bytes) {
+            if (testBit(pair[1], config.switches.fan.on)) {
+              setAccessory("fan", "true");
+            }
+            if (testBit(pair[1], config.switches.fan.off)) {
+              setAccessory("fan", "false");
             }
           }
         }
@@ -88,6 +96,8 @@ const debounce = (func, wait) => {
   };
 };
 
+const testBit = (value, bit) => (value >> bit) % 2 !== 0;
+
 const setVolume = (vol) => {
   // ensures to mute the mic
   if (vol < 5) {
@@ -110,5 +120,19 @@ const setVideoLights = async (light) => {
     };
     const { body } = await got.post(config.nodered.endpoint, options);
     previousVideoLight = light;
+  }
+};
+
+const setAccessory = async (accessory, status) => {
+  if (previousAccessoryStatus[accessory] !== status) {
+    const options = {
+      username: config.nodered.username,
+      password: config.nodered.password,
+      json: {
+        [accessory]: status,
+      },
+    };
+    const { body } = await got.post(config.nodered.endpoint, options);
+    previousAccessoryStatus[accessory] = status;
   }
 };
